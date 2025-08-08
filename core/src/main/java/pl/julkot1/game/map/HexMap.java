@@ -82,7 +82,6 @@ public class HexMap {
     private final int rows;
     private final int cols;
     private final Tile[][] tiles;
-    private final Colors colors;
 
     /**
      * Creates a hexagonal map with the specified number of rows and columns.
@@ -93,11 +92,9 @@ public class HexMap {
      * @param colors Colors object to generate random colors for tiles.
      */
     public HexMap(int rows, int cols, Colors colors) {
-        this.colors = colors;
         this.rows = rows;
         this.cols = cols;
         this.tiles = new Tile[rows][cols];
-        Random rand = new Random();
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 Tile tile = new Tile(colors.getRandomColor());

@@ -39,7 +39,7 @@ public class Screen3D implements Screen {
     private float cameraDistance = 8f;
     private final Vector3 mapCenter = new Vector3(MAP_WIDTH * HEX_RADIUS * 0.75f, 0, MAP_HEIGHT * HEX_RADIUS * (float)Math.sqrt(3) / 2f);
 
-    private int lastMouseX, lastMouseY;
+    private int lastMouseX;
     private boolean dragging = false;
 
     private final Vector3 cameraOffset = new Vector3(0, 0, 0);
@@ -155,7 +155,7 @@ public class Screen3D implements Screen {
 
         float camMapX = camera.position.x / (HEX_RADIUS * 1.5f);
         float camMapY = camera.position.z / (HEX_RADIUS * (float)Math.sqrt(3));
-        gui.getMinimap().setCameraView(camMapX, camMapY, 0, 0);
+        gui.getMinimap().setCameraView(camMapX, camMapY);
 
         gui.setFps(Gdx.graphics.getFramesPerSecond());
         gui.setCameraPosition(camera.position.x, camera.position.z);
@@ -169,8 +169,7 @@ public class Screen3D implements Screen {
             modelBatch,
             camera,
             environment,
-            hexMap,
-            hoveredX, hoveredY // pass hovered tile
+            hexMap
         );
 
         handleTileClick();
@@ -284,13 +283,11 @@ public class Screen3D implements Screen {
         if (Gdx.input.isButtonPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
             if (!dragging) {
                 lastMouseX = Gdx.input.getX();
-                lastMouseY = Gdx.input.getY();
                 dragging = true;
             } else {
                 int dx = Gdx.input.getX() - lastMouseX;
                 cameraAngle -= dx * 0.3f;
                 lastMouseX = Gdx.input.getX();
-                lastMouseY = Gdx.input.getY();
             }
         } else {
             dragging = false;

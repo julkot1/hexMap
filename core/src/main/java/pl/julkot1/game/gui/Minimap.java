@@ -10,7 +10,6 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import pl.julkot1.game.map.HexMap;
 import pl.julkot1.game.map.Tile;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.graphics.g2d.Batch;
 
 
@@ -90,15 +89,14 @@ public class Minimap extends Table {
     }
 
     // Camera position and view size for overlay
-    private float cameraX = -1, cameraY = -1, viewWidth = -1, viewHeight = -1;
+    private float cameraX = -1;
+    private float cameraY = -1;
 
-    private ShapeRenderer shapeRenderer = new ShapeRenderer();
+    private final ShapeRenderer shapeRenderer = new ShapeRenderer();
 
-    public void setCameraView(float cameraX, float cameraY, float viewWidth, float viewHeight) {
+    public void setCameraView(float cameraX, float cameraY) {
         this.cameraX = cameraX;
         this.cameraY = cameraY;
-        this.viewWidth = viewWidth;
-        this.viewHeight = viewHeight;
     }
 
     @Override

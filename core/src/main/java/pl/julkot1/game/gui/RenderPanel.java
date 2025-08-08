@@ -5,13 +5,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import pl.julkot1.game.map.MapGenerator;
 
 public class RenderPanel extends Table {
-    private TextButton regenButton;
     private TextField seedField;
     public void initPanel(Skin skin, Gui gui) {
         this.bottom().left().pad(10);
         this.setBackground(gui.createBackgroundDrawable(new Color(0.12f, 0.12f, 0.18f, 0.85f), 12));
 
-        regenButton = new TextButton("Regenerate", skin);
+        TextButton regenButton = new TextButton("Regenerate", skin);
         this.add(regenButton).pad(10).left();
 
         seedField = new TextField("", skin);

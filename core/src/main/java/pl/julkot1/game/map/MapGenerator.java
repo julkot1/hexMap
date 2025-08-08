@@ -16,8 +16,6 @@ public class MapGenerator {
     // --- Constants for thresholds ---
     public static final float WATER_LEVEL = 0.45f;
     public static final float SAND_LEVEL = 0.5f;
-    public static final float GRASS_LEVEL = 0.62f;
-    public static final float FOREST_LEVEL = 0.7f;
 
     // --- Color constants ---
     public static final Map<Tile.BiomeType, Color> BIOME_COLORS = new HashMap<>();
@@ -129,15 +127,13 @@ public class MapGenerator {
 
         for (int row = 0; row < map.getRows(); row++) {
             for (int col = 0; col < map.getCols(); col++) {
-                double nx = col;
-                double ny = row;
 
-                double continent = continentNorm.get(nx, ny, 0);
-                double island = islandNorm.get(nx, ny, 0);
+                double continent = continentNorm.get(col, row, 0);
+                double island = islandNorm.get(col, row, 0);
 
-                double n = baseNorm.get(nx, ny, 0);
-                double h = humidityNorm.get(nx, ny, 0);
-                double t = tempNorm.get(nx, ny, 0);
+                double n = baseNorm.get(col, row, 0);
+                double h = humidityNorm.get(col, row, 0);
+                double t = tempNorm.get(col, row, 0);
 
                 Tile tile = map.getTile(row, col);
 
@@ -167,7 +163,6 @@ public class MapGenerator {
         }
     }
 
-    // --- Modular biome resolver pattern ---
 
     public interface BiomeResolver {
         BiomeResult resolve(
@@ -178,13 +173,7 @@ public class MapGenerator {
         );
     }
 
-    public static class BiomeResult {
-        public final Tile.BiomeType biomeType;
-        public final Color color;
-        public BiomeResult(Tile.BiomeType biomeType, Color color) {
-            this.biomeType = biomeType;
-            this.color = color;
-        }
+    public record BiomeResult(Tile.BiomeType biomeType, Color color) {
     }
 
     // --- SIMPLER BIOME RESOLVER WITH MORE FOREST/JUNGLE/PLANTS ---
@@ -269,10 +258,4 @@ public class MapGenerator {
         return Tile.MoistureType.NORMAL;
     }
 
-    private static Tile.PlantVarietyType resolvePlantVarietyType(double p) {
-        if (p < 0.18) return Tile.PlantVarietyType.NONE;
-        if (p < 0.38) return Tile.PlantVarietyType.LOW;
-        if (p > 0.82) return Tile.PlantVarietyType.HIGH;
-        return Tile.PlantVarietyType.NORMAL;
-    }
 }

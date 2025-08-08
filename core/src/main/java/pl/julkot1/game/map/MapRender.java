@@ -4,10 +4,7 @@ import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
-import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.Color;
 import pl.julkot1.game.Screen3D;
 
 public class MapRender {
@@ -17,9 +14,7 @@ public class MapRender {
             ModelBatch modelBatch,
             PerspectiveCamera camera,
             Environment environment,
-            HexMap hexMap,
-            int hoveredX,
-            int hoveredY
+            HexMap hexMap
     ) {
         Vector3 camPos = camera.position;
         float hexWidth = Screen3D.HEX_RADIUS * 2f;

@@ -27,12 +27,14 @@ public class TileWindow extends Table {
     public void setTileInfo(Tile tile, int row, int col) {
         if (infoLabel == null || tile == null) return;
         String info = String.format(
-            "Row: %d\nCol: %d\n"
-            + "Terrain: %s\n"
-            + "Temperature: %.2f C (%s)\n"
-            + "Moisture: %.1f (%s)\n"
-            + "Biome: %s\n"
-            + "Clicked: %s",
+            """
+                Row: %d
+                Col: %d
+                Terrain: %s
+                Temperature: %.2f C (%s)
+                Moisture: %.1f (%s)
+                Biome: %s
+                Clicked: %s""",
             row, col,
             tile.getTerrainType(),
             tile.getTemperature() * 30, tile.getTemperatureType(),
