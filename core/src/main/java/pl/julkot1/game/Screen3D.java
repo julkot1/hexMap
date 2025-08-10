@@ -5,11 +5,8 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g3d.*;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalShadowLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
@@ -24,23 +21,12 @@ import pl.julkot1.game.map.MapRender;
 import pl.julkot1.game.map.Tile;
 
 public class Screen3D implements Screen {
-    private PerspectiveCamera camera;
-    private ModelBatch modelBatch;
-    private Environment environment;
-    private Model hexModel;
-    private Model cubeModel;
-
     public static final int MAP_WIDTH = 100;
     public static final int MAP_HEIGHT = 100;
     public static final float HEX_RADIUS = 1f;
     public static final float HEX_HEIGHT = 0.5f;
 
-    private float cameraAngle = 0f;
-    private float cameraDistance = 8f;
     private final Vector3 mapCenter = new Vector3(MAP_WIDTH * HEX_RADIUS * 0.75f, 0, MAP_HEIGHT * HEX_RADIUS * (float)Math.sqrt(3) / 2f);
-
-    private int lastMouseX;
-    private boolean dragging = false;
 
     private final Vector3 cameraOffset = new Vector3(0, 0, 0);
 
@@ -50,34 +36,14 @@ public class Screen3D implements Screen {
 
     private boolean wasLeftPressed = false;
 
-    private float timeOfDay = 0f;
-    private static final float DAY_LENGTH = 20f;
-    private DirectionalLight sunLight;
-
-    private int hoveredX = -1, hoveredY = -1;
-    private Tile hoveredTile = null;
+    private Model hexModel;
+    private Model cubeModel;
 
     @Override
     public void show() {
-        camera = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        camera.position.set(10, 15, 20);
-        camera.lookAt(10, 0, 5);
-        camera.near = 5f;
-        camera.far = 100f;
-        camera.update();
-
-        modelBatch = new ModelBatch();
-
-        environment = new Environment();
-        environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.8f, 0.8f, 0.8f, 1f));
-
-        // Setup shadow light
-        // Add this field
-        DirectionalShadowLight shadowLight = new DirectionalShadowLight(2048, 2048, 1f, 1f, 100f, 100f);
-
-        environment.add( shadowLight.set(1f, 1f, 1f, -1f, -0.8f, -0.2f));
-        environment.shadowMap = shadowLight;
-        sunLight = shadowLight;
+        MapRender.initCameraAndEnvironment(
+            MAP_WIDTH, MAP_HEIGHT, HEX_RADIUS, HEX_HEIGHT, mapCenter
+        );
 
         hexMap = new HexMap(MAP_WIDTH, MAP_HEIGHT, HexMap.Colors.randomColors());
         MapGenerator.generateNoiseMap(hexMap);
@@ -86,15 +52,15 @@ public class Screen3D implements Screen {
         hexModel = modelBuilder.createCylinder(
                 HEX_RADIUS * 2, HEX_HEIGHT, HEX_RADIUS * 2, 6,
                 new Material(ColorAttribute.createDiffuse(Color.WHITE)),
-                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
+                com.badlogic.gdx.graphics.VertexAttributes.Usage.Position | com.badlogic.gdx.graphics.VertexAttributes.Usage.Normal
         );
 
         cubeModel = modelBuilder.createCylinder(
                 HEX_RADIUS, HEX_RADIUS, HEX_RADIUS, 12,
                 new Material( ColorAttribute.createDiffuse(new Color(1f, 0.5f, 0.2f, 0.3f)),
                     ColorAttribute.createEmissive(Color.BLUE),
-                    FloatAttribute.createShininess(16f)),
-                VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal
+                    com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute.createShininess(16f)),
+                com.badlogic.gdx.graphics.VertexAttributes.Usage.Position | com.badlogic.gdx.graphics.VertexAttributes.Usage.Normal
         );
 
         updateMapModel();
@@ -116,8 +82,6 @@ public class Screen3D implements Screen {
 
             updateMapModel();
         });
-
-
     }
 
     private void updateMapModel() {
@@ -132,11 +96,9 @@ public class Screen3D implements Screen {
                 instance.transform.setToTranslation(px, tile.getHeight() / 2f, py);
                 instance.transform.scale(1f, tile.getHeight() / HEX_HEIGHT, 1f);
 
-                // Set color based on tile type
                 Color renderColor = tile.getColor();
                 instance.materials.get(0).set(ColorAttribute.createDiffuse(renderColor));
 
-                // Remove any spawned cube on map regen
                 tile.setCubeModel(null);
             }
         }
@@ -144,44 +106,29 @@ public class Screen3D implements Screen {
 
     @Override
     public void render(float delta) {
-        updateDayNightCycle(delta);
+        MapRender.handleCameraInput(cameraOffset, delta);
+        MapRender.handleMouseInput();
 
-        handleCameraInput(delta);
-        handleMouseInput();
+        MapRender.updateHoveredTile(gui, hexMap, HEX_RADIUS);
 
-        updateHoveredTile();
+        MapRender.updateCamera(cameraOffset);
 
-        updateCamera();
-
-        float camMapX = camera.position.x / (HEX_RADIUS * 1.5f);
-        float camMapY = camera.position.z / (HEX_RADIUS * (float)Math.sqrt(3));
-        gui.getMinimap().setCameraView(camMapX, camMapY);
-
-        gui.setFps(Gdx.graphics.getFramesPerSecond());
-        gui.setCameraPosition(camera.position.x, camera.position.z);
-        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        Gdx.gl.glClearColor(0.1f, 0.1f, 0.2f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-
-        camera.update();
+        MapRender.preRender();
 
         MapRender.render(
-            modelBatch,
-            camera,
-            environment,
-            hexMap
+            hexMap,
+            gui,
+            HEX_RADIUS,
+            cameraOffset
         );
+        Vector3 cameraPosition = MapRender.getCamera().position;
+        gui.getMinimap().setCameraView(cameraPosition.x, cameraPosition.z);
 
         handleTileClick();
 
         gui.render();
-    }
 
-    private void updateDayNightCycle(float delta) {
-        timeOfDay += (24f / DAY_LENGTH) * delta;
-        if (timeOfDay > 24f) timeOfDay -= 24f;
     }
-
 
 
     private void handleTileClick() {
@@ -195,7 +142,7 @@ public class Screen3D implements Screen {
             int mouseX = Gdx.input.getX();
             int mouseY = Gdx.input.getY();
 
-            Ray ray = camera.getPickRay(mouseX, mouseY);
+            Ray ray = MapRender.getCamera().getPickRay(mouseX, mouseY);
 
             float minDist = Float.MAX_VALUE;
             int selectedX = -1, selectedY = -1;
@@ -245,110 +192,8 @@ public class Screen3D implements Screen {
         wasLeftPressed = leftPressed;
     }
 
-    private void handleCameraInput(float delta) {
-        float panSpeed = 10f * delta;
-        float zoomSpeed = 10f * delta;
-
-        Vector3 forward = new Vector3(
-            (float)Math.sin(Math.toRadians(cameraAngle)),
-            0,
-            (float)Math.cos(Math.toRadians(cameraAngle))
-        ).nor();
-        Vector3 right = new Vector3(forward.z, 0, -forward.x).nor();
-
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            cameraOffset.sub(forward.x * panSpeed, 0, forward.z * panSpeed);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            cameraOffset.add(forward.x * panSpeed, 0, forward.z * panSpeed);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            cameraOffset.sub(right.x * panSpeed, 0, right.z * panSpeed);
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            cameraOffset.add(right.x * panSpeed, 0, right.z * panSpeed);
-        }
-
-        if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.PLUS) || Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.EQUALS)) {
-            cameraDistance -= zoomSpeed;
-            if (cameraDistance < 5f) cameraDistance = 5f;
-        }
-        if (Gdx.input.isKeyPressed(com.badlogic.gdx.Input.Keys.MINUS)) {
-            cameraDistance += zoomSpeed;
-            if (cameraDistance > 50f) cameraDistance = 50f;
-        }
-    }
-
-    private void handleMouseInput() {
-        if (Gdx.input.isButtonPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
-            if (!dragging) {
-                lastMouseX = Gdx.input.getX();
-                dragging = true;
-            } else {
-                int dx = Gdx.input.getX() - lastMouseX;
-                cameraAngle -= dx * 0.3f;
-                lastMouseX = Gdx.input.getX();
-            }
-        } else {
-            dragging = false;
-        }
-
-    }
-
-    private void updateCamera() {
-        float rad = (float)Math.toRadians(cameraAngle);
-        float x = mapCenter.x + cameraDistance * (float)Math.sin(rad) + cameraOffset.x;
-        float z = mapCenter.z + cameraDistance * (float)Math.cos(rad) + cameraOffset.z;
-        float y = 10f + cameraDistance * 0.2f + cameraOffset.y;
-        camera.position.set(x, y, z);
-        camera.lookAt(mapCenter.x + cameraOffset.x, 0 + cameraOffset.y, mapCenter.z + cameraOffset.z);
-        camera.up.set(Vector3.Y);
-    }
-
-    private void updateHoveredTile() {
-        hoveredX = -1;
-        hoveredY = -1;
-        if (gui.getStage().hit(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY(), true) != null) {
-            return;
-        }
-        Ray ray = camera.getPickRay(Gdx.input.getX(), Gdx.input.getY());
-        final float[] minDist = {Float.MAX_VALUE};
-        hexMap.iterate((x, y, tile) -> {;
-            float px = x * HEX_RADIUS * 1.5f;
-            float py = y * HEX_RADIUS * (float)Math.sqrt(3) + (x % 2) * HEX_RADIUS * (float)Math.sqrt(3) / 2f;
-            float height = tile.getHeight();
-
-            BoundingBox bbox = new BoundingBox(
-                new Vector3(px - HEX_RADIUS, 0, py - HEX_RADIUS),
-                new Vector3(px + HEX_RADIUS, height, py + HEX_RADIUS)
-            );
-
-            if (Intersector.intersectRayBoundsFast(ray, bbox)) {
-                float dist = ray.origin.dst(px, 0, py);
-                if (dist < minDist[0]) {
-                    if(hoveredTile != null) {
-                        hoveredTile.getModelInstance().materials.get(0).set(ColorAttribute.createDiffuse(hoveredTile.getColor()));
-                    }
-                    minDist[0] = dist;
-                    hoveredX = x;
-                    hoveredY = y;
-                    Tile t = hexMap.getTile(x, y);
-                    ColorAttribute orig = (ColorAttribute) t.getModelInstance().materials.get(0).get(ColorAttribute.Diffuse);
-                    Color hoverColor = new Color(orig.color).lerp(Color.RED, 0.5f);
-                    t.getModelInstance().materials.get(0).set(ColorAttribute.createDiffuse(hoverColor));
-                    hoveredTile = t;
-
-                }
-            }
-        });
-
-    }
-
     @Override
     public void resize(int width, int height) {
-        camera.viewportWidth = width;
-        camera.viewportHeight = height;
-        camera.update();
         if (gui != null) gui.resize(width, height);
     }
 
@@ -369,7 +214,6 @@ public class Screen3D implements Screen {
 
     @Override
     public void dispose() {
-        modelBatch.dispose();
         hexModel.dispose();
         cubeModel.dispose();
         if (gui != null) gui.dispose();

@@ -102,8 +102,6 @@ public class Minimap extends Table {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-
-        // Draw camera position as a point (circle) overlay
         if (cameraX >= 0 && cameraY >= 0 && minimapImage != null && map != null) {
             batch.end();
             shapeRenderer.setProjectionMatrix(getStage().getCamera().combined);
@@ -115,10 +113,20 @@ public class Minimap extends Table {
             float imgW = minimapImage.getWidth();
             float imgH = minimapImage.getHeight();
 
-            float px = (cameraX / Math.max(1f, (map.getCols() - 1))) * (imgW - 1);
-            float py = imgH - (cameraY / Math.max(1f, (map.getRows() - 1))) * (imgH - 1);
+            int cols = map.getCols();
+            int rows = map.getRows();
 
-            // Clamp to minimap bounds
+            // Fix: cameraX and cameraY are in world coordinates, convert to tile indices
+            float tileX = cameraX / (1.5f);
+            float tileY = (cameraY - ((int)tileX % 2) * (float)Math.sqrt(3) / 2f) / ((float)Math.sqrt(3));
+
+            // Clamp tileX/tileY to map bounds
+            tileX = Math.max(0, Math.min(cols - 1, tileX));
+            tileY = Math.max(0, Math.min(rows - 1, tileY));
+
+            float px = (tileX / Math.max(1f, (cols - 1))) * (imgW - 1);
+            float py = imgH - (tileY / Math.max(1f, (rows - 1))) * (imgH - 1);
+
             px = Math.max(0, Math.min(imgW - 1, px));
             py = Math.max(0, Math.min(imgH - 1, py));
 
